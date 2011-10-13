@@ -5,11 +5,24 @@
 module Classify where
 
 import Bio.SamTools.Bam
-import Data.List (foldl')
+import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing)
+import Text.Printf (printf)
 
 data ClassStats = CS { count :: !Int, xsum, x2sum, x3sum, x4sum :: !Double } deriving Show
 data Classify = Class { innies, outies, lefties, righties :: !ClassStats } deriving Show
+
+-- | Pretty-print a 'Classify' value.
+display :: Classify -> String
+display c = unlines $ map (intercalate "\t")
+  [ ["Alignment","  count"," mean","stdev"," skew"," kurt"]
+  ,  "innies   " : disp1 (innies c)
+  ,  "outies   " : disp1 (outies c)
+  ,  "lefties  " : disp1 (lefties c)
+  ,  "righties " : disp1 (righties c)]
+  where disp1 cs = printf "%7d" (count cs) : let ct = fromIntegral (count cs)
+                                     in map (printf "%5.1f") [xsum cs/ct, 0, 0, 0]
+
 
 -- | Default value
 cdef :: Classify
