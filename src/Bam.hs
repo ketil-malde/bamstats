@@ -6,4 +6,4 @@ import System.Environment (getArgs)
 
 main = do
   [f] <- getArgs
-  putStrLn . display . classify . take 10000 =<< readBams f
+  putStrLn . display . classify  =<< readBams f

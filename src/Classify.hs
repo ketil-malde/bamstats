@@ -9,20 +9,32 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing)
 import Text.Printf (printf)
 
+-- todo: Hist, Examples
+
 data ClassStats = CS { count :: !Int, xsum, x2sum, x3sum, x4sum :: !Double } deriving Show
 data Classify = Class { innies, outies, lefties, righties :: !ClassStats } deriving Show
 
 -- | Pretty-print a 'Classify' value.
 display :: Classify -> String
 display c = unlines $ map (intercalate "\t")
-  [ ["Alignment","  count"," mean","stdev"," skew"," kurt"]
+  [ ["Alignment","         count","   mean","  stdev","   skew","   kurt"]
   ,  "innies   " : disp1 (innies c)
   ,  "outies   " : disp1 (outies c)
   ,  "lefties  " : disp1 (lefties c)
   ,  "righties " : disp1 (righties c)]
-  where disp1 cs = printf "%7d" (count cs) : let ct = fromIntegral (count cs)
-                                     in map (printf "%5.1f") [xsum cs/ct, 0, 0, 0]
 
+disp1 cs = printf "%14d" (count cs) : map (printf "%7.1f") [m, s, skew, kurt]
+  where n = fromIntegral (count cs)
+        x = xsum cs
+        x2 = x2sum cs
+        x3 = x3sum cs
+        x4 = x4sum cs
+        m = x/n
+        m2 = m*m
+        m3 = m*m2
+        s = sqrt ((x2-m2*n)/(n-1))
+        skew = (x3 - 3*m*x2 + 2*m3*n)/(s*s*s*n)
+        kurt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
 -- | Default value
 cdef :: Classify
