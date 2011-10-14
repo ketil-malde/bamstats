@@ -1,5 +1,5 @@
 
--- | Classify reads in a BAM-file as innie outie rightie leftie,
+-- | Stats reads in a BAM-file as innie outie rightie leftie,
 --   with stats for distances
 
 module Classify where
@@ -12,10 +12,12 @@ import Text.Printf (printf)
 -- todo: Hist, Examples
 
 data ClassStats = CS { count :: !Int, xsum, x2sum, x3sum, x4sum :: !Double } deriving Show
-data Classify = Class { innies, outies, lefties, righties :: !ClassStats } deriving Show
+data Hist = H { } deriving Show
 
--- | Pretty-print a 'Classify' value.
-display :: Classify -> String
+data Stats a = Class { innies, outies, lefties, righties :: !a } deriving Show
+
+-- | Pretty-print a 'Stats' value.
+display :: Stats ClassStats -> String
 display c = unlines $ map (intercalate "\t")
   [ ["Alignment","         count","   mean","  stdev","   skew","   kurt"]
   ,  "innies   " : disp1 (innies c)
@@ -37,16 +39,16 @@ disp1 cs = printf "%14d" (count cs) : map (printf "%7.1f") [m, s, skew, kurt]
         kurt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
 -- | Default value
-cdef :: Classify
+cdef :: Stats ClassStats
 cdef = Class c c c c
   where c = CS 0 0 0 0 0
 
 -- | Extract info from alignments
-classify :: [Bam1] -> Classify
+classify :: [Bam1] -> Stats ClassStats
 classify = foldl' class1 cdef 
 
 -- | Update data structure with a single alignment
-class1 :: Classify -> Bam1 -> Classify
+class1 :: Stats ClassStats -> Bam1 -> Stats ClassStats
 class1 c0 b 
   | isUnmapped b = c0
   | isOpposite b =
@@ -54,7 +56,7 @@ class1 c0 b
   | otherwise =
       (if firstUpstream b then add_rightie else add_leftie) b c0
 
-add_innie, add_outie, add_rightie, add_leftie :: Bam1 -> Classify -> Classify
+add_innie, add_outie, add_rightie, add_leftie :: Bam1 -> Stats ClassStats -> Stats ClassStats
 add_innie b c = c { innies = insert b (innies c) }
 add_outie b c = c { outies = insert b (outies c) }
 add_rightie b c = c { righties = insert b (righties c) }
