@@ -15,6 +15,6 @@ Synopsis:      A program to extract various information from BAM alignmnet files
 Executable bam
     Hs-Source-Dirs:  src
     Main-Is:         Bam.hs
-    Build-Depends:   base >= 4 && < 5, samtools-unsafe, samtools, cmdargs
+    Build-Depends:   base >= 4 && < 5, samtools > 0.2.0.1, cmdargs
     -- samtools > 0.2.0.1
 

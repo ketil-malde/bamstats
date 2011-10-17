@@ -4,7 +4,7 @@
 
 module Main where
 import Classify
-import Bio.SamTools.Bam.Unsafe
+import Bio.SamTools.Bam
 import System.Console.CmdArgs
 
 data Options = Stats { numrd :: Maybe Int, inputs :: [FilePath] }
