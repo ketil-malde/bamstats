@@ -9,24 +9,26 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing)
 import Text.Printf (printf)
 
--- todo: Hist, Examples
+data ClassStats = CS { ccount :: !Int, xsum, x2sum, x3sum, x4sum :: !Double } deriving Show
+data Hist = H { hcount :: !Int {- Arrays -} } deriving Show
 
-data ClassStats = CS { count :: !Int, xsum, x2sum, x3sum, x4sum :: !Double } deriving Show
-data Hist = H { } deriving Show
-
-data Stats a = Class { innies, outies, lefties, righties :: !a } deriving Show
+data Stats a = Class { total :: !Int, innies, outies, lefties, righties :: !a } deriving Show
 
 -- | Pretty-print a 'Stats' value.
 display :: Stats ClassStats -> String
 display c = unlines $ map (intercalate "\t")
-  [ ["Alignment","         count","   mean","  stdev","   skew","   kurt"]
-  ,  "innies   " : disp1 (innies c)
-  ,  "outies   " : disp1 (outies c)
-  ,  "lefties  " : disp1 (lefties c)
-  ,  "righties " : disp1 (righties c)]
+  [ ["Alignment","         count","   prop","   mean","  stdev","   skew","   kurt"]
+  ,  "innies   " : disp1 t (innies c)
+  ,  "outies   " : disp1 t (outies c)
+  ,  "lefties  " : disp1 t (lefties c)
+  ,  "righties " : disp1 t (righties c)
+  , ["Total reads: ", show t]]
+  where t = total c
 
-disp1 cs = printf "%14d" (count cs) : map (printf "%7.1f") [m, s, skew, kurt]
-  where n = fromIntegral (count cs)
+disp1 tot cs = printf "%14d" (ccount cs) 
+               : printf "%5.1f%%" (100*n/fromIntegral tot)
+               : map (printf "%7.1f") [m, s, skew, kurt]
+  where n = fromIntegral (ccount cs)
         x = xsum cs
         x2 = x2sum cs
         x3 = x3sum cs
@@ -40,16 +42,20 @@ disp1 cs = printf "%14d" (count cs) : map (printf "%7.1f") [m, s, skew, kurt]
 
 -- | Default value
 cdef :: Stats ClassStats
-cdef = Class c c c c
+cdef = Class 0 c c c c
   where c = CS 0 0 0 0 0
 
 -- | Extract info from alignments
 classify :: [Bam1] -> Stats ClassStats
-classify = foldl' class1 cdef 
+classify = foldl' (class1 . bump) cdef
+
+-- | Update count
+bump :: Stats a -> Stats a
+bump s = s { total = total s + 1 }
 
 -- | Update data structure with a single alignment
 class1 :: Stats ClassStats -> Bam1 -> Stats ClassStats
-class1 c0 b 
+class1 c0 b
   | isUnmapped b = c0
   | isOpposite b =
       (if firstUpstream b then add_innie else add_outie) b c0
