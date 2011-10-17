@@ -12,7 +12,7 @@ data Options = Stats { numrd :: Maybe Int, inputs :: [FilePath] }
              deriving (Data,Typeable,Read,Show)
 
 clfy :: Options
-clfy = Stats { numrd = Nothing &= help "max number of reads to include"
+clfy = Stats { numrd = Nothing &= help "max number of reads (default: all)"
                 , inputs = []     &= args &= typ "BAM file(s)"
                 } &= help "Calculate statistics on insert sizes"
 hst  = Hist { numrd = Nothing &= help "max number of reads to include"
