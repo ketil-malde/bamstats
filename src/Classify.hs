@@ -74,9 +74,6 @@ insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^2) (s3+d^3) (s4+d^4)
 
 isUnmapped, isOpposite, firstUpstream, isBefore :: Bam1 -> Bool
 isUnmapped = isNothing . insertSize -- isUnmap b || isMateUnmap b || mateTargetID b /= targetID b -- <- apparently not the same thing?
-isOpposite b = isReverse b `xor` isMateReverse b 
-firstUpstream b = isReverse b `xor` isBefore b
+isOpposite b = isReverse b /= isMateReverse b 
+firstUpstream b = isReverse b /= isBefore b
 isBefore b = position b < matePosition b
-
-xor :: Bool -> Bool -> Bool
-x `xor` y = (x || y) && not (x && y) --sigh: xor = (/=)
