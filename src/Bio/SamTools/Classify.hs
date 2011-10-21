@@ -87,7 +87,7 @@ mkstats cs = S n m s sk kt
 
 
 instance Insertable ClassStats where
-  insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^2) (s3+d^3) (s4+d^4) 
+  insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 
     where d = maybe (error ("no insert size?\n"++show b)) fromIntegral $ insertSize b
   dispheader _ = ["         count","   prop","   mean","  stdev","   skew","   kurt"]
   cdef = CS 0 0 0 0 0
@@ -117,6 +117,6 @@ data Collect = Bams { bams :: [Bam1] }
 
 instance Insertable Collect where
   insert b (Bams bs) = Bams (b:bs)
-  disp1 total (Bams bs) = [unlines $ ("":map show bs)]
+  disp1 _ (Bams bs) = [unlines $ ("":map show bs)]
   dispheader = const ["foo"]
   cdef = Bams []

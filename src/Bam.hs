@@ -12,7 +12,7 @@ data Options = Stats { numrd :: Maybe Int, inputs :: [FilePath] }
              | Dump { numrd :: Maybe Int, inputs :: [FilePath] }
              deriving (Data,Typeable,Read,Show)
 
-clfy :: Options
+clfy, hst, dump :: Options
 clfy = Stats { numrd = Nothing &= help "max number of reads (default: all)"
                 , inputs = []     &= args &= typ "BAM file(s)"
                 } &= help "Calculate statistics on insert sizes"
@@ -25,6 +25,7 @@ dump = Dump { numrd = Just 100 &= help "max number of reads (default: 100)"
             , inputs = []     &= args &= typ "BAM file(s)"            
             } &= help "Dump alignments in the different classes."
        
+main :: IO ()
 main = do
   o <- cmdArgs $ modes [clfy,hst,dump] 
        &= help "Extract information from BAM files" 
