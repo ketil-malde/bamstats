@@ -3,7 +3,7 @@
 {-# Language DeriveDataTypeable #-}
 
 module Main where
-import Classify
+import Bio.SamTools.Classify
 import Bio.SamTools.Bam
 import System.Console.CmdArgs
 

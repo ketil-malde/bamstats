@@ -2,7 +2,7 @@
 -- | Stats reads in a BAM-file as innie outie rightie leftie,
 --   with stats for distances
 
-module Classify where
+module Bio.SamTools.Classify where
 
 import Bio.SamTools.Bam
 import Data.List (foldl', intercalate)
