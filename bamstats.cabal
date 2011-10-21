@@ -1,4 +1,4 @@
-Name:          bam
+Name:          bamstats
 Version:       0
 License:       GPL
 Cabal-Version: >= 1.6
@@ -8,9 +8,9 @@ Author:        Ketil Malde
 Maintainer:    Ketil Malde <ketil@malde.org>
 Synopsis:      A program to extract various information from BAM alignmnet files
 
--- Library
---    Hs-Source-Dirs:  src
---    Exposed-Modules: Bio.SamTools.Classify
+Library
+    Hs-Source-Dirs:  src
+    Exposed-Modules: Bio.SamTools.Classify
 
 Executable bam
     Hs-Source-Dirs:  src
