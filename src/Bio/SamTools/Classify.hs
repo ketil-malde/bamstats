@@ -85,6 +85,8 @@ mkstats cs = S n m s sk kt
     sk = (x3 - 3*m*x2 + 2*m3*n)/(s*s*s*n)
     kt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
+statistics :: Stats ClassStats -> Stats Statistics
+statistics (Class t i o l r) = (Class t (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
 
 instance Insertable ClassStats where
   insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 
