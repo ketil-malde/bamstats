@@ -31,7 +31,7 @@ main = do
        &= help "Extract information from BAM files" 
        &= program "bam" &= summary "bam v0.0, ©2011 Ketil Malde"
   let geninp f = (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f
-      genout = case o of Stats {} -> putStrLn . display . (classify :: [Bam1] -> Stats ClassStats)
-                         Hist {}     -> putStrLn . display . (classify :: [Bam1] -> Stats Hist)
-                         Dump {} -> putStrLn . display . (classify :: [Bam1] -> Stats Collect)
+      genout = case o of Stats {} -> putStrLn . display . classify (cdef :: ClassStats)
+                         Hist {}  -> putStrLn . display . classify (cdef :: Hist)
+                         Dump {}  -> putStrLn . display . classify (cdef :: Collect)
   mapM_ (\f -> genout =<< geninp f) $ inputs o

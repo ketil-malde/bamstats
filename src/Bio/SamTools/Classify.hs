@@ -33,8 +33,8 @@ class Insertable x where
   cdef :: x  
 
 -- | Extract info from alignments
-classify :: Insertable x => [Bam1] -> Stats x
-classify = foldl' (class1 . bump) (Class 0 cdef cdef cdef cdef)
+classify :: Insertable x => x -> [Bam1] -> Stats x
+classify def = foldl' (class1 . bump) (Class 0 def def def def)
 
 -- | Update count
 bump :: Stats a -> Stats a
