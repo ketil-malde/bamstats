@@ -25,6 +25,9 @@ dump = Dump { numrd = Just 100 &= help "max number of reads (default: 100)"
             , inputs = []     &= args &= typ "BAM file(s)"            
             } &= help "Dump alignments in the different classes."
        
+histgen o = H 0 [(b,0) | b <- enumFromThenTo size (2*size) (maxdist o)]
+  where size = (maxdist o `div` bins o)
+
 main :: IO ()
 main = do
   o <- cmdArgs $ modes [clfy,hst,dump] 
@@ -32,6 +35,6 @@ main = do
        &= program "bam" &= summary "bam v0.0, ©2011 Ketil Malde"
   let geninp f = (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f
       genout = case o of Stats {} -> putStrLn . display . classify (cdef :: ClassStats)
-                         Hist {}  -> putStrLn . display . classify (cdef :: Hist)
+                         Hist {}  -> putStrLn . display . classify (histgen o)
                          Dump {}  -> putStrLn . display . classify (cdef :: Collect)
   mapM_ (\f -> genout =<< geninp f) $ inputs o

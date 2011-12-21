@@ -112,9 +112,11 @@ instance Insertable Hist where
     where go x ((b1,v):bs@(_:_)) =   -- fixme: strictness!
             if x > b1 then (b1,v):go x bs else (b1,v+1):bs
           go x [(b1,v)] = [(b1,v+1)]
-  disp1 tot h = [show h]
-  dispheader = const ["undefined"]
-  cdef = H 0 [(b,0) | b <- [100,200..1000]]
+  disp1 tot h = printf "%14d" (hcount h)
+              : printf "%5.1f%%" (100*fromIntegral (hcount h)/fromIntegral tot::Double)
+              : map (printf "%7.1f" . (fromIntegral :: (Int->Double)) . snd) (buckets h)
+  dispheader h = "         count":"  prop":(map (printf "%7d" . fst) $ init $ buckets h)++["    >"]
+  cdef = undefined
 
 -- --------------------------------------------------
 -- Just "Collect" all the Bams in different classes
