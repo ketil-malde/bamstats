@@ -6,7 +6,7 @@ module Bio.SamTools.Classify where
 
 import Bio.SamTools.Bam
 import Data.List (foldl', intercalate)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromJust)
 import Text.Printf (printf)
 
 data Stats a = Class { total :: !Int, innies, outies, lefties, righties :: !a } deriving Show
@@ -105,13 +105,16 @@ instance Insertable ClassStats where
 -- Hist for accumulating histograms of sizes
 -- --------------------------------------------------
 
-data Hist = H { hcount :: !Int {- Arrays -} } deriving Show
+data Hist = H { hcount :: !Int, buckets :: ![(Int,Int)] } deriving Show
 
 instance Insertable Hist where
-  insert _ _ = undefined
-  disp1 = undefined
-  dispheader = undefined
-  cdef = undefined  
+  insert b h = H (hcount h + 1) (go (fromIntegral $ fromJust $ insertSize b) (buckets h))
+    where go x ((b1,v):bs@(_:_)) =   -- fixme: strictness!
+            if x > b1 then (b1,v):go x bs else (b1,v+1):bs
+          go x [(b1,v)] = [(b1,v+1)]
+  disp1 tot h = [show h]
+  dispheader = const ["undefined"]
+  cdef = H 0 [(b,0) | b <- [100,200..1000]]
 
 -- --------------------------------------------------
 -- Just "Collect" all the Bams in different classes
