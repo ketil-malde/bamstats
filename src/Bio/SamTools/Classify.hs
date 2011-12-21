@@ -109,9 +109,10 @@ data Hist = H { hcount :: !Int, buckets :: ![(Int,Int)] } deriving Show
 
 instance Insertable Hist where
   insert b h = H (hcount h + 1) (go (fromIntegral $ fromJust $ insertSize b) (buckets h))
-    where go x ((b1,v):bs@(_:_)) =   -- fixme: strictness!
-            if x > b1 then (b1,v):go x bs else (b1,v+1):bs
-          go x [(b1,v)] = [(b1,v+1)]
+    where go x ((b1,v):bs@(_:_)) =
+            if x > b1 then (b1,v):go x bs else inc (b1,v):bs
+          go x [(b1,v)] = [inc (b1,v)]
+          inc (x,y) = let y' = y+1 in y' `seq` (x,y')
   disp1 tot h = printf "%14d" (hcount h)
               : printf "%5.1f%%" (100*fromIntegral (hcount h)/fromIntegral tot::Double)
               : map (printf "%7.1f" . (fromIntegral :: (Int->Double)) . snd) (buckets h)
