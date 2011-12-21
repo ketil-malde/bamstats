@@ -56,7 +56,9 @@ add_rightie b c = c { righties = insert b (righties c) }
 add_leftie b c = c { lefties = insert b (lefties c) }
 
 isUnmapped, isOpposite, firstUpstream, isBefore :: Bam1 -> Bool
-isUnmapped = isNothing . insertSize -- isUnmap b || isMateUnmap b || mateTargetID b /= targetID b -- <- apparently not the same thing?
+isUnmapped = isNothing . insertSize
+-- isUnmap b || isMateUnmap b || mateTargetID b /= targetID b -- not the same
+-- insertSize is Nothing if negative (downstream read)
 isOpposite b = isReverse b /= isMateReverse b 
 firstUpstream b = isReverse b /= isBefore b
 isBefore b = position b < matePosition b
