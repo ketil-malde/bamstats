@@ -96,7 +96,7 @@ instance Insertable ClassStats where
   dispheader _ = ["         count","   prop","   mean","  stdev","   skew","   kurt"]
   cdef = CS 0 0 0 0 0
   disp1 tot cs = printf "%14d" (ccount cs) 
-               : printf "%5.1f%%" (100*fromIntegral (ccount cs)/fromIntegral tot::Double)
+               : printf "%5.2f%%" (200*fromIntegral (ccount cs)/fromIntegral tot::Double)
                : map (printf "%7.1f") [mean s, stdev s, skew s, kurt s]
     where 
       s = mkstats cs  
@@ -114,8 +114,8 @@ instance Insertable Hist where
           go x [(b1,v)] = [inc (b1,v)]
           inc (x,y) = let y' = y+1 in y' `seq` (x,y')
   disp1 tot h = printf "%14d" (hcount h)
-              : printf "%5.1f%%" (100*fromIntegral (hcount h)/fromIntegral tot::Double)
-              : map (printf "%7.1f" . (fromIntegral :: (Int->Double)) . snd) (buckets h)
+              : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
+              : map (printf "%7d" . snd) (buckets h)
   dispheader h = "         count":"  prop":(map (printf "%7d" . fst) $ init $ buckets h)++["    >"]
   cdef = undefined
 
