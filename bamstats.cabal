@@ -1,5 +1,5 @@
 Name:          bamstats
-Version:       0
+Version:       0.1
 License:       GPL
 Cabal-Version: >= 1.6
 Build-Type:    Simple
@@ -16,6 +16,6 @@ Library
 Executable bam
     Hs-Source-Dirs:  src
     Main-Is:         Bam.hs
-    Build-Depends:   base >= 4 && < 5, samtools > 0.2.0.1, cmdargs
+    Build-Depends:   base >= 4 && < 5, samtools >= 0.2.1, cmdargs
     Ghc-Options:     -Wall
 
