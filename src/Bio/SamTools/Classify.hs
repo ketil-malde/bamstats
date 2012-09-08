@@ -26,11 +26,34 @@ display c = unlines $ map (intercalate "\t")
   , ["Total reads: ", show t]]
   where t = total c
 
+showQuants :: Stats Hist -> String
+showQuants c = unlines $ map (intercalate "\t")
+  [  "Alignment" : header (innies c)
+  ,  "innies   " : quants t (innies c)
+  ,  "outies   " : quants t (outies c)
+  ,  "lefties  " : quants t (lefties c)
+  ,  "righties " : quants t (righties c)
+  , ["Total reads: ", show t]]
+  where t = total c
+        percentiles = [0.05,0.25,0.5,0.75,0.95]
+        quants tot h = printf "%14d" (hcount h)
+              : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
+              : if hcount h == 0 then map (const "  N/A ") percentiles
+                else go (hcount h) percentiles 0 (buckets h)
+        header _h = "         count":"  prop":map (printf "%6.0f%%" . (*100)) percentiles
+        go :: Int -> [Double] -> Int -> [(Int,Int)] -> [String]
+        go all (f:fs) sum ((b,c):rest) = 
+          let next = sum+c in 
+          if fromIntegral next/fromIntegral all >= f 
+          then printf "%7d" b : go all fs sum ((b,c):rest)
+          else     go all (f:fs) next rest
+        go _ [] _ _ = []
+        go _ _ _ [] = error "ran out of reads!?"
+
 class Insertable x where
   insert :: Bam1 -> x -> x
   disp1  :: Int  -> x -> [String]
   dispheader :: x -> [String]
-  cdef :: x  
 
 -- | Extract info from alignments
 classify :: Insertable x => x -> [Bam1] -> Stats x
@@ -94,7 +117,6 @@ instance Insertable ClassStats where
   insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 
     where d = maybe (error ("no insert size?\n"++show b)) fromIntegral $ insertSize b
   dispheader _ = ["         count","   prop","   mean","  stdev","   skew","   kurt"]
-  cdef = CS 0 0 0 0 0
   disp1 tot cs = printf "%14d" (ccount cs) 
                : printf "%5.2f%%" (200*fromIntegral (ccount cs)/fromIntegral tot::Double)
                : map (printf "%7.1f") [mean s, stdev s, skew s, kurt s]
@@ -117,7 +139,6 @@ instance Insertable Hist where
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
               : map (printf "%7d" . snd) (buckets h)
   dispheader h = "         count":"  prop":(map (printf "%7d" . fst) $ init $ buckets h)++["    >"]
-  cdef = undefined
 
 -- --------------------------------------------------
 -- Just "Collect" all the Bams in different classes
@@ -129,4 +150,3 @@ instance Insertable Collect where
   insert b (Bams bs) = Bams (b:bs)
   disp1 _ (Bams bs) = [unlines $ ("":map show bs)]
   dispheader = const ["foo"]
-  cdef = Bams []
