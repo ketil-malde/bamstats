@@ -35,19 +35,21 @@ showQuants c = unlines $ map (intercalate "\t")
   ,  "righties " : quants t (righties c)
   , ["Total reads: ", show t]]
   where t = total c
-        percentiles = [0.05,0.25,0.5,0.75,0.95]
+        percentiles = [0.05,0.25,0.5,0.75,0.95] :: [Double]
         quants tot h = printf "%14d" (hcount h)
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
-              : if hcount h == 0 then map (const "  N/A ") percentiles
-                else go (hcount h) percentiles 0 (buckets h)
+              : if hcount h == 0 then map (const "    N/A") percentiles
+                else go (map (round . (*fromIntegral (hcount h))) percentiles) 0 (0,0) (buckets h)
         header _h = "         count":"  prop":map (printf "%6.0f%%" . (*100)) percentiles
-        go :: Int -> [Double] -> Int -> [(Int,Int)] -> [String]
-        go all (f:fs) sum ((b,c):rest) = 
+        go :: [Int] -> Int -> (Int,Int) -> [(Int,Int)] -> [String]
+        go (0:fs) sum prev inp = "      0" : go fs sum prev inp
+        go (f:fs) sum prev ((b,c):rest) = 
           let next = sum+c in 
-          if fromIntegral next/fromIntegral all >= f 
-          then printf "%7d" b : go all fs sum ((b,c):rest)
-          else     go all (f:fs) next rest
-        go _ [] _ _ = []
+          if next >= f
+          then let b' = b - round (fromIntegral (next-f)/fromIntegral c*fromIntegral (b-fst prev))
+               in printf "%7d" b' : (go fs sum prev ((b,c):rest))
+          else     go (f:fs) next (b,c) rest
+        go [] _ _ _ = []
         go _ _ _ [] = error "ran out of reads!?"
 
 class Insertable x where
