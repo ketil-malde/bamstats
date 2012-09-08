@@ -1,12 +1,12 @@
 Name:          bamstats
-Version:       0.1
+Version:       0.2
 License:       GPL
 Cabal-Version: >= 1.6
 Build-Type:    Simple
 Category:      Bioinformatics
 Author:        Ketil Malde
 Maintainer:    Ketil Malde <ketil@malde.org>
-Synopsis:      A program to extract various information from BAM alignmnet files
+Synopsis:      A program to extract various information from BAM alignmnet files.
 
 Library
     Hs-Source-Dirs:  src
