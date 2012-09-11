@@ -45,7 +45,7 @@ main :: IO ()
 main = do
   o <- cmdArgs $ modes [clfy,hst,quants,dump] 
        &= help "Extract information from BAM files" 
-       &= program "bam" &= summary "bam v0.0, ©2012 Ketil Malde"
+       &= program "bam" &= summary "bam v0.3, ©2012 Ketil Malde"
   let geninp f = (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f
       genout = putStrLn . case o of Stats {} -> display . classify (CS 0 0 0 0 0)
                                     Hist {}  -> (case plot o of Nothing -> display
