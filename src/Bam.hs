@@ -8,7 +8,7 @@ import Bio.SamTools.Bam
 import System.Console.CmdArgs
 
 data Options = Stats { numrd :: Maybe Int, inputs :: [FilePath] }
-             | Hist { numrd :: Maybe Int, bins, maxdist :: Int, inputs :: [FilePath] }
+             | Hist { numrd :: Maybe Int, bins, maxdist :: Int, inputs :: [FilePath], plot :: Maybe String }
              | Quants { numrd :: Maybe Int, mindist :: Int, delta :: Double, inputs :: [FilePath] }
              | Dump { numrd :: Maybe Int, inputs :: [FilePath] }
              deriving (Data,Typeable,Read,Show)
@@ -21,6 +21,7 @@ hst  = Hist { numrd = Nothing &= help "max number of reads to include"
             , bins  = 20      &= help "number of bins" &= typ "INT"
             , maxdist = 1000  &= help "max insert size to count" &= typ "INT"
             , inputs = []     &= args &= typ "BAM file(s)"
+            , plot = Nothing  &= help "gnuplot output, with optional gnuplot commands" &= opt ""
             } &= help "Collect a histogram of insert sizes"
 quants = Quants {
               numrd = Nothing &= help "max number of reads to include"
@@ -47,7 +48,8 @@ main = do
        &= program "bam" &= summary "bam v0.0, ©2012 Ketil Malde"
   let geninp f = (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f
       genout = putStrLn . case o of Stats {} -> display . classify (CS 0 0 0 0 0)
-                                    Hist {}  -> display . classify (histgen o)
+                                    Hist {}  -> (case plot o of Nothing -> display
+                                                                Just str -> genplot str) . classify (histgen o)
                                     Quants {} -> showQuants . classify (quantgen o)
                                     Dump {}  -> display . classify (Bams [])
   mapM_ (\f -> genout =<< geninp f) $ inputs o

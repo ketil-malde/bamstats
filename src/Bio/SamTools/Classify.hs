@@ -52,6 +52,19 @@ showQuants c = unlines $ map (intercalate "\t")
         go [] _ _ _ = []
         go _ _ _ [] = error "ran out of reads!?"
 
+genplot :: String -> Stats Hist -> String
+genplot cmds h = preamble ++ cmds ++ plot
+  where preamble = unlines ["set style data boxes"
+                           ,"set style fill solid"]
+        plot = "plot '-' ti 'innies', '-' ti 'outies', '-' ti 'lefties', '-' ti 'righties'\n"
+                  ++concat [ plot1 $ buckets $ innies h
+                           , plot1 $ map (\(x,y)->(-x,-y)) $ buckets $ outies h
+                           , plot1 $ map (\(x,y)->(-x, y)) $ buckets $ lefties h
+                           , plot1 $ map (\(x,y)->( x,-y)) $ buckets $ righties h]
+        plot1 = unlines . go 0
+        go prev ((b,c):rest) = (show ((prev+b) `div` 2) ++ " " ++ show c) : go (b+1) rest
+        go _ [] = []
+        
 class Insertable x where
   insert :: Bam1 -> x -> x
   disp1  :: Int  -> x -> [String]
