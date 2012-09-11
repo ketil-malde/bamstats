@@ -4,6 +4,7 @@
 
 module Bio.SamTools.Classify where
 
+import Prelude hiding (sum)
 import Bio.SamTools.Bam
 import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing, fromJust)
@@ -27,14 +28,14 @@ display c = unlines $ map (intercalate "\t")
   where t = total c
 
 showQuants :: Stats Hist -> String
-showQuants c = unlines $ map (intercalate "\t")
-  [  "Alignment" : header (innies c)
-  ,  "innies   " : quants t (innies c)
-  ,  "outies   " : quants t (outies c)
-  ,  "lefties  " : quants t (lefties c)
-  ,  "righties " : quants t (righties c)
+showQuants cs = unlines $ map (intercalate "\t")
+  [  "Alignment" : header (innies cs)
+  ,  "innies   " : quants t (innies cs)
+  ,  "outies   " : quants t (outies cs)
+  ,  "lefties  " : quants t (lefties cs)
+  ,  "righties " : quants t (righties cs)
   , ["Total reads: ", show t]]
-  where t = total c
+  where t = total cs
         percentiles = [0.05,0.25,0.5,0.75,0.95] :: [Double]
         quants tot h = printf "%14d" (hcount h)
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
@@ -46,7 +47,7 @@ showQuants c = unlines $ map (intercalate "\t")
         go (f:fs) sum prev ((b,c):rest) = 
           let next = sum+c in 
           if next >= f
-          then let b' = b - round (fromIntegral (next-f)/fromIntegral c*fromIntegral (b-fst prev))
+          then let b' = b - round (fromIntegral (next-f)/fromIntegral c*fromIntegral (b-fst prev)::Double)
                in printf "%7d" b' : (go fs sum prev ((b,c):rest))
           else     go (f:fs) next (b,c) rest
         go [] _ _ _ = []
@@ -148,7 +149,8 @@ instance Insertable Hist where
   insert b h = H (hcount h + 1) (go (fromIntegral $ fromJust $ insertSize b) (buckets h))
     where go x ((b1,v):bs@(_:_)) =
             if x > b1 then (b1,v):go x bs else inc (b1,v):bs
-          go x [(b1,v)] = [inc (b1,v)]
+          go _ [(b1,v)] = [inc (b1,v)]
+          go _ [] = error "this never happens"
           inc (x,y) = let y' = y+1 in y' `seq` (x,y')
   disp1 tot h = printf "%14d" (hcount h)
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
