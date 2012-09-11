@@ -54,9 +54,11 @@ showQuants cs = unlines $ map (intercalate "\t")
         go _ _ _ [] = error "ran out of reads!?"
 
 genplot :: String -> Stats Hist -> String
-genplot cmds h = preamble ++ cmds ++ plot
+genplot cmds h = preamble ++ cmds ++ "\n" ++ plot
   where preamble = unlines ["set style data boxes"
-                           ,"set style fill solid"]
+                           ,"set style fill solid border -1"
+                           ,"set xlabel 'insert length'"
+                           ,"set ylabel 'read count'"]
         plot = "plot '-' ti 'innies', '-' ti 'outies', '-' ti 'lefties', '-' ti 'righties'\n"
                   ++concat [ plot1 $ buckets $ innies h
                            , plot1 $ map (\(x,y)->(-x,-y)) $ buckets $ outies h
