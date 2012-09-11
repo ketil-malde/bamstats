@@ -63,7 +63,7 @@ genplot cmds h = preamble ++ cmds ++ plot
                            , plot1 $ map (\(x,y)->( x,-y)) $ buckets $ righties h]
         plot1 = unlines . go 0
         go prev ((b,c):rest) = (show ((prev+b) `div` 2) ++ " " ++ show c) : go (b+1) rest
-        go _ [] = []
+        go _ [] = ["e"]
         
 class Insertable x where
   insert :: Bam1 -> x -> x
