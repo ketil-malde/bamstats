@@ -65,8 +65,9 @@ genplot cmds h = preamble ++ cmds ++ "\n" ++ plot
                            , plot1 $ map (\(x,y)->(-x, y)) $ buckets $ lefties h
                            , plot1 $ map (\(x,y)->( x,-y)) $ buckets $ righties h]
         plot1 = unlines . go 0
-        go prev ((b,c):rest) = (show ((prev+b) `div` 2) ++ " " ++ show c) : go (b+1) rest
-        go _ [] = ["e"]
+        go prev ((b,c):rest@(_:_)) = (show ((prev+b) `div` 2) ++ " " ++ show c) : go (b+1) rest
+        go _ [_] = ["e"] -- ignore last bucket, which is a catch-all
+        go _ [] = error "no data"
         
 class Insertable x where
   insert :: Bam1 -> x -> x
