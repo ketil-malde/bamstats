@@ -10,7 +10,7 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Printf (printf)
 
-data Stats a = Class { total :: !Int, innies, outies, lefties, righties :: !a } deriving Show
+data Stats a = Class { total, orphans, splits :: !Int, innies, outies, lefties, righties :: !a } deriving Show
 
 -- --------------------------------------------------
 -- The generic collection framework
@@ -24,7 +24,9 @@ display c = unlines $ map (intercalate "\t")
   ,  "outies   " : disp1 t (outies c)
   ,  "lefties  " : disp1 t (lefties c)
   ,  "righties " : disp1 t (righties c)
-  , ["Total reads: ", show t]]
+  , ["Total reads: "++show t
+    ," orphans: "++show (orphans c)++" ("++show (100*orphans c`div`t)++"%)"
+    ," split pairs: "++show (splits c`div`2)++" ("++show (100*splits c`div`t)++"%)" ]]
   where t = total c
 
 showQuants :: Stats Hist -> String
@@ -34,7 +36,9 @@ showQuants cs = unlines $ map (intercalate "\t")
   ,  "outies   " : quants t (outies cs)
   ,  "lefties  " : quants t (lefties cs)
   ,  "righties " : quants t (righties cs)
-  , ["Total reads: ", show t]]
+  , ["Total reads: "++show t
+    ," orphans: "++show (orphans cs)++" ("++show (100*orphans cs`div`t)++"%)"
+    ," split pairs: "++show (splits cs`div`2)++" ("++show (100*splits cs`div`t)++"%)" ]]
   where t = total cs
         percentiles = [0.05,0.25,0.5,0.75,0.95] :: [Double]
         quants tot h = printf "%14d" (hcount h)
@@ -56,7 +60,7 @@ showQuants cs = unlines $ map (intercalate "\t")
 genplot :: String -> Stats Hist -> String
 genplot cmds h = preamble ++ cmds ++ "\n" ++ plot
   where preamble = unlines ["set style data boxes"
-                           ,"set style fill solid border -1"
+                           ,"set style fill solid border 0"
                            ,"set xlabel 'insert length'"
                            ,"set ylabel 'read count'"]
         plot = "plot '-' ti 'innies', '-' ti 'outies', '-' ti 'lefties', '-' ti 'righties'\n"
@@ -76,7 +80,7 @@ class Insertable x where
 
 -- | Extract info from alignments
 classify :: Insertable x => x -> [Bam1] -> Stats x
-classify def = foldl' (class1 . bump) (Class 0 def def def def)
+classify def = foldl' (class1 . bump) (Class 0 0 0 def def def def)
 
 -- | Update count
 bump :: Stats a -> Stats a
@@ -85,20 +89,26 @@ bump s = s { total = total s + 1 }
 -- | Update data structure with a single alignment
 class1 :: Insertable x => Stats x -> Bam1 -> Stats x
 class1 c0 b
-  | isUnmapped b = c0
+  | isNothing (insertSize b) = add_unmapped b c0
   | isOpposite b =
       (if firstUpstream b then add_innie else add_outie) b c0
   | otherwise =
       (if firstUpstream b then add_rightie else add_leftie) b c0
 
-add_innie, add_outie, add_rightie, add_leftie :: Insertable x => Bam1 -> Stats x -> Stats x
+add_innie, add_outie, add_rightie, add_leftie, add_unmapped 
+  :: Insertable x => Bam1 -> Stats x -> Stats x
 add_innie b c = c { innies = insert b (innies c) }
 add_outie b c = c { outies = insert b (outies c) }
 add_rightie b c = c { righties = insert b (righties c) }
 add_leftie b c = c { lefties = insert b (lefties c) }
 
-isUnmapped, isOpposite, firstUpstream, isBefore :: Bam1 -> Bool
-isUnmapped = isNothing . insertSize
+add_unmapped b c  
+  | isUnmap b                    = c -- not sure what this means
+  | isMateUnmap b                = c { orphans = orphans c + 1 }
+  | mateTargetID b /= targetID b = c { splits = splits c + 1 }
+  | otherwise = c
+
+isOpposite, firstUpstream, isBefore :: Bam1 -> Bool
 -- isUnmap b || isMateUnmap b || mateTargetID b /= targetID b -- not the same
 -- insertSize is Nothing if negative (downstream read)
 isOpposite b = isReverse b /= isMateReverse b 
@@ -130,7 +140,7 @@ mkstats cs = S n m s sk kt
     kt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
 statistics :: Stats ClassStats -> Stats Statistics
-statistics (Class t i o l r) = (Class t (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
+statistics (Class t orp sp i o l r) = (Class t orp sp (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
 
 instance Insertable ClassStats where
   insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 

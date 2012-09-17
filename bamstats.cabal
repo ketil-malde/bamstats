@@ -7,6 +7,7 @@ Category:      Bioinformatics
 Author:        Ketil Malde
 Maintainer:    Ketil Malde <ketil@malde.org>
 Synopsis:      A program to extract various information from BAM alignmnet files.
+Homepage:      http://blog.malde.org/posts/bamstats.html
 
 Library
     Hs-Source-Dirs:  src
