@@ -10,7 +10,7 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Printf (printf)
 
-data Stats a = Class { total, orphans, splits :: !Int, innies, outies, lefties, righties :: !a } deriving Show
+data Stats a = Class { total, unmapped, orphans, splits :: !Int, innies, outies, lefties, righties :: !a } deriving Show
 
 -- --------------------------------------------------
 -- The generic collection framework
@@ -19,26 +19,31 @@ data Stats a = Class { total, orphans, splits :: !Int, innies, outies, lefties, 
 -- | Pretty-print a 'Stats' value.
 display :: Insertable x => Stats x -> String
 display c = unlines $ map (intercalate "\t")
-  [  "Alignment" : dispheader (innies c)
+  [  "#Alignment" : dispheader (innies c)
   ,  "innies   " : disp1 t (innies c)
   ,  "outies   " : disp1 t (outies c)
   ,  "lefties  " : disp1 t (lefties c)
   ,  "righties " : disp1 t (righties c)
-  , ["Total reads: "++show t
-    ," orphans: "++show (orphans c)++" ("++show (100*orphans c`div`t)++"%)"
-    ," split pairs: "++show (splits c`div`2)++" ("++show (100*splits c`div`t)++"%)" ]]
+  , summarize c t]
   where t = total c
+
+summarize :: Stats a -> Int -> [String]
+summarize c t = [printf "\nTotal reads:  %7d\n" t
+    ++" unmapped:    "++show1 unmapped++"\n"
+    ++" orphans:     "++show1 orphans++"\n"
+    ++" split pairs: "++show2 splits]
+   where show1 f = printf "%7d" (f c)++percent (f c)
+         show2 f = printf "%7d" (f c`div`2)++percent (f c)
+         percent x = printf " (%.1f%%)" (100.0*fromIntegral x/fromIntegral t::Double)
 
 showQuants :: Stats Hist -> String
 showQuants cs = unlines $ map (intercalate "\t")
-  [  "Alignment" : header (innies cs)
+  [  "#Alignment" : header (innies cs)
   ,  "innies   " : quants t (innies cs)
   ,  "outies   " : quants t (outies cs)
   ,  "lefties  " : quants t (lefties cs)
   ,  "righties " : quants t (righties cs)
-  , ["Total reads: "++show t
-    ," orphans: "++show (orphans cs)++" ("++show (100*orphans cs`div`t)++"%)"
-    ," split pairs: "++show (splits cs`div`2)++" ("++show (100*splits cs`div`t)++"%)" ]]
+  , summarize cs t]
   where t = total cs
         percentiles = [0.05,0.25,0.5,0.75,0.95] :: [Double]
         quants tot h = printf "%14d" (hcount h)
@@ -80,7 +85,7 @@ class Insertable x where
 
 -- | Extract info from alignments
 classify :: Insertable x => x -> [Bam1] -> Stats x
-classify def = foldl' (class1 . bump) (Class 0 0 0 def def def def)
+classify def = foldl' (class1 . bump) (Class 0 0 0 0 def def def def)
 
 -- | Update count
 bump :: Stats a -> Stats a
@@ -103,8 +108,9 @@ add_rightie b c = c { righties = insert b (righties c) }
 add_leftie b c = c { lefties = insert b (lefties c) }
 
 add_unmapped b c  
-  | isUnmap b                    = c -- not sure what this means
+  | isUnmap b                    = c { unmapped = unmapped c + 1 }
   | isMateUnmap b                = c { orphans = orphans c + 1 }
+  -- both mateTgtID and tgtId should be Just something  
   | mateTargetID b /= targetID b = c { splits = splits c + 1 }
   | otherwise = c
 
@@ -140,7 +146,7 @@ mkstats cs = S n m s sk kt
     kt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
 statistics :: Stats ClassStats -> Stats Statistics
-statistics (Class t orp sp i o l r) = (Class t orp sp (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
+statistics (Class t ump orp sp i o l r) = (Class t ump orp sp (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
 
 instance Insertable ClassStats where
   insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 
