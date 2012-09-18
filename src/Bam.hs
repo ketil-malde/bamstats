@@ -6,6 +6,7 @@ module Main where
 import Bio.SamTools.Classify
 import Bio.SamTools.Bam
 import System.Console.CmdArgs
+import Control.Monad (when)
 
 data Options = Stats { numrd :: Maybe Int, inputs :: [FilePath] }
              | Hist { numrd :: Maybe Int, bins, maxdist :: Int, inputs :: [FilePath], plot :: Maybe String }
@@ -46,7 +47,8 @@ main = do
   o <- cmdArgs $ modes [clfy,hst,quants,dump] 
        &= help "Extract information from BAM files" 
        &= program "bam" &= summary "bam v0.3, ©2012 Ketil Malde"
-  let geninp f = (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f
+  when (null $ inputs o) $ error "No input files specified"
+  let geninp f = do {putStrLn ("## Input file: "++f) ; (case numrd o of Just x -> take x; Nothing -> id) `fmap` readBams f}
       genout = putStrLn . case o of Stats {} -> display . classify (CS 0 0 0 0 0)
                                     Hist {}  -> (case plot o of Nothing -> display
                                                                 Just str -> genplot str) . classify (histgen o)
