@@ -10,7 +10,7 @@ import Data.List (foldl', intercalate)
 import Data.Maybe (isNothing, fromJust)
 import Text.Printf (printf)
 
-data Stats a = Class { total, unmapped, orphans, splits :: !Int, innies, outies, lefties, righties :: !a } deriving Show
+data Stats a = Class { total, unmapped, orphans, splits, secondary :: !Int, innies, outies, lefties, righties :: !a } deriving Show
 
 -- --------------------------------------------------
 -- The generic collection framework
@@ -31,7 +31,8 @@ summarize :: Stats a -> Int -> [String]
 summarize c t = [printf "\nTotal reads:  %7d\n" t
     ++" unmapped:    "++show1 unmapped++"\n"
     ++" orphans:     "++show1 orphans++"\n"
-    ++" split pairs: "++show2 splits]
+    ++" split pairs: "++show2 splits++"\n"
+    ++" secondary:   "++show1 secondary]
    where show1 f = printf "%7d" (f c)++percent (f c)
          show2 f = printf "%7d" (f c`div`2)++percent (f c)
          percent x = printf " (%.1f%%)" (100.0*fromIntegral x/fromIntegral t::Double)
@@ -77,15 +78,17 @@ genplot cmds h = preamble ++ cmds ++ "\n" ++ plot
         go prev ((b,c):rest@(_:_)) = (show ((prev+b) `div` 2) ++ " " ++ show c) : go (b+1) rest
         go _ [_] = ["e"] -- ignore last bucket, which is a catch-all
         go _ [] = error "no data"
-        
+
+-- | Something that collects information from Bam1s, similar
+--   to a fold, and can display it as lines.
 class Insertable x where
-  insert :: Bam1 -> x -> x
-  disp1  :: Int  -> x -> [String]
-  dispheader :: x -> [String]
+  insert :: Bam1 -> x -> x         -- collect from a Bam1
+  disp1  :: Int  -> x -> [String]  -- the int is the total, for statistics
+  dispheader :: x -> [String]      -- display the appropriate header
 
 -- | Extract info from alignments
 classify :: Insertable x => x -> [Bam1] -> Stats x
-classify def = foldl' (class1 . bump) (Class 0 0 0 0 def def def def)
+classify def = foldl' (class1 . bump) (Class 0 0 0 0 0 def def def def)
 
 -- | Update count
 bump :: Stats a -> Stats a
@@ -94,19 +97,21 @@ bump s = s { total = total s + 1 }
 -- | Update data structure with a single alignment
 class1 :: Insertable x => Stats x -> Bam1 -> Stats x
 class1 c0 b
+  | isSecondary b = add_secondary b c0
   | isNothing (insertSize b) = add_unmapped b c0
   | isOpposite b =
       (if firstUpstream b then add_innie else add_outie) b c0
   | otherwise =
       (if firstUpstream b then add_rightie else add_leftie) b c0
 
-add_innie, add_outie, add_rightie, add_leftie, add_unmapped 
+add_innie, add_outie, add_rightie, add_leftie, add_unmapped, add_secondary
   :: Insertable x => Bam1 -> Stats x -> Stats x
 add_innie b c = c { innies = insert b (innies c) }
 add_outie b c = c { outies = insert b (outies c) }
 add_rightie b c = c { righties = insert b (righties c) }
 add_leftie b c = c { lefties = insert b (lefties c) }
 
+add_secondary _ c = c { secondary = secondary c + 1 }
 add_unmapped b c  
   | isUnmap b                    = c { unmapped = unmapped c + 1 }
   | isMateUnmap b                = c { orphans = orphans c + 1 }
@@ -146,7 +151,7 @@ mkstats cs = S n m s sk kt
     kt = (x4 - 4*m*x3 + 6*m2*x2 - 4*m3*x + n*m*m3)/(s*s*s*s*n) - 3
 
 statistics :: Stats ClassStats -> Stats Statistics
-statistics (Class t ump orp sp i o l r) = (Class t ump orp sp (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
+statistics (Class t ump orp sp sec i o l r) = (Class t ump orp sp sec (mkstats i) (mkstats o) (mkstats l) (mkstats r)) -- todo: Functor instance?
 
 instance Insertable ClassStats where
   insert b (CS c s s2 s3 s4) = CS (c+1) (s+d) (s2+d^(2::Int)) (s3+d^(3::Int)) (s4+d^(4::Int)) 
