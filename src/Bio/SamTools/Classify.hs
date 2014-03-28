@@ -25,7 +25,7 @@ display c = unlines $ map (intercalate "\t")
   ,  "lefties  " : disp1 t (lefties c)
   ,  "righties " : disp1 t (righties c)
   , summarize c t]
-  where t = total c
+  where t = total c - secondary c
 
 summarize :: Stats a -> Int -> [String]
 summarize c t = [printf "\nTotal reads:  %7d\n" t
@@ -45,7 +45,7 @@ showQuants cs = unlines $ map (intercalate "\t")
   ,  "lefties  " : quants t (lefties cs)
   ,  "righties " : quants t (righties cs)
   , summarize cs t]
-  where t = total cs
+  where t = total cs - secondary cs
         percentiles = [0.05,0.25,0.5,0.75,0.95] :: [Double]
         quants tot h = printf "%14d" (hcount h)
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
