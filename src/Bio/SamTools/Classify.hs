@@ -39,7 +39,7 @@ summarize c t = [printf "\nTotal reads:  %7d\n" t
 
 showQuants :: Stats Hist -> String
 showQuants cs = unlines $ map (intercalate "\t")
-  [  "#Alignment" : header (innies cs)
+  [  "#Alignment" : hdr (innies cs)
   ,  "innies   " : quants t (innies cs)
   ,  "outies   " : quants t (outies cs)
   ,  "lefties  " : quants t (lefties cs)
@@ -51,7 +51,7 @@ showQuants cs = unlines $ map (intercalate "\t")
               : printf "%5.2f%%" (200*fromIntegral (hcount h)/fromIntegral tot::Double)
               : if hcount h == 0 then map (const "    N/A") percentiles
                 else go (map (round . (*fromIntegral (hcount h))) percentiles) 0 (0,0) (buckets h)
-        header _h = "         count":"  prop":map (printf "%6.0f%%" . (*100)) percentiles
+        hdr _h = "         count":"  prop":map (printf "%6.0f%%" . (*100)) percentiles
         go :: [Int] -> Int -> (Int,Int) -> [(Int,Int)] -> [String]
         go (0:fs) sum prev inp = "      0" : go fs sum prev inp
         go (f:fs) sum prev ((b,c):rest) = 
